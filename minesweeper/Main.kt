@@ -3,7 +3,9 @@ package minesweeper
 import kotlin.random.Random
 
 // mine: 1, safe cell: 0
-class Minesweeper(private val height: Int, private val width: Int){
+class Minesweeper{
+    private val height: Int
+    private val width: Int
     private val map: MutableList<MutableList<Int>>
     private val mines: Int
     private val marked: MutableList<MutableList<Int>>
@@ -11,9 +13,14 @@ class Minesweeper(private val height: Int, private val width: Int){
     private var endGame = false
 
     init {
-        print("How many mines do you want on the field? >")
-        mines = readLine()!!.toInt()
+        mines = getNumberOfMines()
+
+        val size = getMapSize()
+        height = size[0]
+        width = size[1]
         map = MutableList(height) { MutableList(width) {0} }
+
+        addMines()
 
         marked = MutableList(1) { mutableListOf() }
         marked.removeAt(0)
@@ -21,15 +28,55 @@ class Minesweeper(private val height: Int, private val width: Int){
         explored = mutableSetOf(mutableListOf(0, 0))
         explored.remove(mutableListOf(0, 0))
 
-        addMines(mines)
+        help()
     }
 
-    private fun addMines(mines: Int) {
+    private fun help() {
+        println("Instruction: If you think a cell is safe, use \"mine\" operation to free the cell.\n" +
+                "If you think a cell is mine, use \"mine\" operation to mark the cell, mark a already marked cell twice will remove the mark.\n" +
+                "valid move example: \"3 4 free\"; \"3 4 mine\".\n" +
+                "type \"\\help\" to get help, type \"\\exit\" to exit the game.")
+    }
+
+    private fun getMapSize(): MutableList<Int> {
+        val size = MutableList(2) { 0 }
+        while (true) {
+            println("How big the field do you want? height width:")
+            println("(enter two positive integer separated by space, too big the field will lead to slow processing)")
+            try {
+                val (h, w) = readLine()!!.split(" ")
+                size[0] = Integer.parseInt(h)
+                size[1] = Integer.parseInt(w)
+                break
+            } catch (e: Exception) {
+                println("Invalid input, please try again")
+            }
+        }
+        return size
+    }
+
+    private fun getNumberOfMines(): Int {
+        var mines: Int
+        while (true) {
+            println("How many mines do you want on the field?")
+            println("(enter a positive integers)")
+            try {
+                val num = readLine()!!
+                mines = Integer.parseInt(num)
+                break
+            } catch (e: Exception) {
+                println("Invalid input, please try again")
+            }
+        }
+        return mines
+    }
+
+    private fun addMines() {
         var numberOfMines = mines
         while (numberOfMines > 0) {
-            val num = Random.nextInt(0, 80)
-            val x = num / 9
-            val y = num % 9
+            val num = Random.nextInt(0, height * width - 1)
+            val x = num / width
+            val y = num % width
             if (map[x][y] != 1) {
                 map[x][y] = 1
                 numberOfMines--
@@ -167,22 +214,21 @@ class Minesweeper(private val height: Int, private val width: Int){
 
     private fun printMap() {
         // top bounder
-        print(" |123456789|\n-|---------|\n")
-//        for (i in 1..width + 3) {
-//            print(when (i) {
-//                1 -> " "
-//                2, width + 3 -> "|"
-//                else -> i - 2
-//            })
-//        }
-//        println()
-//        for (i in 1..width + 3) {
-//            print(when (i) {
-//                2, width + 3 -> "|"
-//                else -> "-"
-//            })
-//        }
-//        println()
+        for (i in 1..width + 3) {
+            print(when (i) {
+                1 -> " "
+                2, width + 3 -> "|"
+                else -> i - 2
+            })
+        }
+        println()
+        for (i in 1..width + 3) {
+            print(when (i) {
+                2, width + 3 -> "|"
+                else -> "-"
+            })
+        }
+        println()
         // core
         for (i in 0..map.lastIndex) {
             print("${i + 1}|")
@@ -211,14 +257,13 @@ class Minesweeper(private val height: Int, private val width: Int){
             print("|\n")
         }
         // bottom bounder
-        print("-|---------|\n")
-//        for (i in 1..width + 3) {
-//            print(when (i) {
-//                2, width + 3 -> "|"
-//                else -> "-"
-//            })
-//        }
-//        println()
+        for (i in 1..width + 3) {
+            print(when (i) {
+                2, width + 3 -> "|"
+                else -> "-"
+            })
+        }
+        println()
     }
 
     private fun endGame() {
@@ -241,28 +286,40 @@ class Minesweeper(private val height: Int, private val width: Int){
 
     private fun playerMove() {
         while (true) {
-            print("Set/unset mines marks or claim a cell as free:")
-            val (_y, _x, operation) = readLine()!!.split(" ")
-            val y = _y.toInt() - 1
-            val x = _x.toInt() - 1
-
-            when (operation) {
-                "free" -> if (freeValidation(x, y) && map[x][y] != 1) {
-                    explore(x, y)
-                    printMap()
+            println("Set/unset mines marks or claim a cell as free:")
+            try {
+                val input = readLine()!!
+                if (input == "\\help") {
+                    help()
                     break
-                } else {
-                    printMap()
-                    println("You stepped on a mine and failed!")
+                } else if (input == "\\exit") {
                     endGame = true
                     break
                 }
-                "mine" -> if (markValidation(x, y)) {
-                    mark(x, y)
-                    printMap()
-                    break
+                val (_y, _x, operation) = input.split(" ")
+                val y = _y.toInt() - 1
+                val x = _x.toInt() - 1
+
+                when (operation) {
+                    "free" -> if (freeValidation(x, y) && map[x][y] != 1) {
+                        explore(x, y)
+                        printMap()
+                        break
+                    } else {
+                        printMap()
+                        println("You stepped on a mine and failed!")
+                        endGame = true
+                        break
+                    }
+                    "mine" -> if (markValidation(x, y)) {
+                        mark(x, y)
+                        printMap()
+                        break
+                    }
+                    else -> println("Invalid operation")
                 }
-                else -> println("Invalid operation")
+            } catch (e: Exception) {
+                println("Invalid operation")
             }
         }
     }
@@ -278,6 +335,6 @@ class Minesweeper(private val height: Int, private val width: Int){
 }
 
 fun main() {
-    val minesweeper = Minesweeper(9, 9)
+    val minesweeper = Minesweeper()
     minesweeper.gameStart()
 }
