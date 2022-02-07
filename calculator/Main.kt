@@ -1,10 +1,10 @@
-// This calculator only supports integer additon, subtraction, multiplication and division
+// This calculator only supports addition, subtraction, multiplication and division.
 package calculator
 
-import java.math.BigInteger
+import java.math.BigDecimal
 
 class Calculator {
-    private val variables = HashMap<String, BigInteger>()
+    private val variables = HashMap<String, BigDecimal>()
 
     private fun interpretOperator(operator: String): String {
         return if (operator.contains("[-+]".toRegex())) {
@@ -19,19 +19,19 @@ class Calculator {
         }
     }
 
-    private fun twoNumberCalculate(operand1: BigInteger, operator: String, operand2: BigInteger): BigInteger {
+    private fun twoNumberCalculate(operand1: BigDecimal, operator: String, operand2: BigDecimal): BigDecimal {
         return when (operator) {
             "+" -> operand1 + operand2
             "-" -> operand1 - operand2
             "*" -> operand1 * operand2
-            "/" -> operand1.divide(operand2)
+            "/" -> operand1 / operand2
             else -> throw IllegalArgumentException("No such operator!")
         }
     }
 
     private fun checkNumber(str: String): Boolean {
         return try {
-            str.toBigInteger()
+            str.toBigDecimal()
             true
         } catch (e: Exception) {
             false
@@ -156,12 +156,12 @@ class Calculator {
             return
         }
 
-        val stack = mutableListOf<BigInteger>()
+        val stack = mutableListOf<BigDecimal>()
 
         for (item in postfix) {
             try {
                 if (checkNumber(item)) {
-                    stack.add(item.toBigInteger())
+                    stack.add(item.toBigDecimal())
                 } else if (item.contains("[*/+-]".toRegex())) {
                     val operand1 = stack[stack.lastIndex]
                     stack.removeAt(stack.lastIndex)
@@ -227,7 +227,7 @@ class Calculator {
         // assign integer to variable
         if (input.contains("[a-zA-Z]+\\s*=\\s*-?\\d+".toRegex())) {
             val variable: String
-            val value: BigInteger
+            val value: BigDecimal
 
             var regex = Regex("[a-zA-Z]+.*(?==)")
             val v= regex.find(input)
@@ -237,7 +237,7 @@ class Calculator {
 
             if (v != null && num != null) {
                 variable = v.value.trim()
-                value = num.value.trim().toBigInteger()
+                value = num.value.trim().toBigDecimal()
                 variables[variable] = value
                 //println("assign ${variables[variable]} to $variable")
             }
@@ -275,7 +275,7 @@ class Calculator {
                 input.contains("[a-zA-Z]+".toRegex()) && !input.contains("[+*/-]+".toRegex())-> {
                     // enter one variable
                     if (variables.contains(input)) {
-                        val value: BigInteger? = variables[input]
+                        val value: BigDecimal? = variables[input]
                         println(value)
                     } else {
                         println("Unknown variable")
@@ -291,7 +291,7 @@ class Calculator {
                 input.matches("-?\\d+".toRegex()) -> {
                     //println("enter one number")
                     try {
-                        println(input.toBigInteger())
+                        println(input.toBigDecimal())
                     } catch (e: Exception) {
                         println("Invalid expression")
                     }
